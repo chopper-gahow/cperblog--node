@@ -44,7 +44,6 @@ router.get('/login/userlogin',(req,res)=>{
 		}
 	})
 })
-//通过id查询用户
 //退出登陆
 router.get('/login/outlogin',(req,res)=>{
   var idx
@@ -246,13 +245,31 @@ router.get('/blog/writeblog',(req,res)=>{
   issession = session.filter(item=>{
     return item._id == req.session.user._id
   })
+  var now = new Date();
+      var year = now.getFullYear(); //得到年份
+      var month = now.getMonth();//得到月份
+      var date = now.getDate();//得到日期
+      var hour = now.getHours();//得到小时
+      var minu = now.getMinutes();//得到分钟
+      var sec = now.getSeconds();//得到秒
+      month = month + 1;
+      if (month < 10) month = "0" + month;
+      if (date < 10) date = "0" + date;
+      if (hour < 10) hour = "0" + hour;
+      if (minu < 10) minu = "0" + minu;
+      if (sec < 10) sec = "0" + sec;
+      var time = "";
+      time = year + "-" + month + "-" + date+ " " + hour + ":" + minu + ":" + sec;
   if(issession.length != 0){
   var blog = new Blog({
     title: body.title,
     text: body.text,
-    writer: req.session.user.nickname,
-    headimg:'http://hchopper.top/headimg.jpg',
+    writer: req.session.user.username,
+    writerickname:req.session.user.nickname,
+    headimg:req.session.user.headimg,
+    writedate:time
   })
+  console.log(time);
   blog.save((err,ret)=>{
     if (err) {
       res.json({
@@ -267,6 +284,31 @@ router.get('/blog/writeblog',(req,res)=>{
       })
     }
   })
-}
+  }
+  else{
+    res.json({
+      "msg":"请先登录后在来"
+    })
+  }
+})
+//博客点击
+router.get('/blog/findblogbyid',(req,res)=>{
+  var body = req.query
+  Blog.find({
+    _id: body.id
+  },(err,rut)=>{
+    if(err){
+      res.json({
+        "msg":"error"
+      })
+    }
+    else{
+      res.json({
+        "code":200,
+        "msg":"查询成功",
+        "data":rut
+      })
+    }
+  })
 })
 module.exports = router;

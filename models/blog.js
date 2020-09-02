@@ -16,7 +16,9 @@ var BlogSchema = new Schema({
     },
     writedate:{
         type:String
-    }
-
+    },
+    writerickname:{
+        type:String
+    },
 })
 module.exports = mongoose.model('Blog',BlogSchema) 
