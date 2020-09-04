@@ -8,7 +8,7 @@ let app = express();
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({extended:false}))
 
-// 3 创建服务器应用程序
+// 创建服务器应用程序
 //      也就是原来的http.createServer();
 
 // 公开指定目录
@@ -18,6 +18,7 @@ app.use((req,res,next)=>{
    res.header("Access-Control-Allow-Credentials", "true"); 
 // res.header('Access-Control-Allow-Origin', '*');
 　　res.header('Access-Control-Allow-Origin', 'http://localhost:8080');
+// 　　res.header('Access-Control-Allow-Origin', 'http://47.102.107.15:3000');
 　　res.header('Access-Control-Allow-Headers', 'Content-Type, Content-Length, Authorization, Accept, X-Requested-With , yourHeaderFeild');
 　　res.header('Access-Control-Allow-Methods', 'PUT, POST, GET, DELETE, OPTIONS');
 　　if (req.method == 'OPTIONS') {

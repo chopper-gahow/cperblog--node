@@ -20,5 +20,13 @@ var BlogSchema = new Schema({
     writerickname:{
         type:String
     },
+    comments:[
+        {
+            content:{type:String},
+            commernickname:{type:String},
+            commer:{type:String},
+            commerhead:{type:String}
+        }
+    ]
 })
 module.exports = mongoose.model('Blog',BlogSchema) 

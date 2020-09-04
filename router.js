@@ -2,14 +2,12 @@
 var express=require('express');
 var router= express.Router();
 const qiniu = require("qiniu");
-var fs = require('fs')
 const User = require('./models/user');
 var session=[];
 const Blog = require('./models/blog');
 const { writer } = require('repl');
-
-
-// const express = require('express');
+const blog = require('./models/blog');
+const { ifError } = require('assert');
 //登录接口
 router.get('/login/userlogin',(req,res)=>{
   var body=req.query
@@ -145,7 +143,6 @@ router.get('/token/cper/gettoken',(req,res)=>{
 router.get('/personal/editnickname',(req,res)=>{
   var body = req.query,
   issession = session.filter(item=>{
-    console.log(req.session.user._id,"jijijiji")
     return item._id == req.session.user._id
   })
   if(issession.length != 0){
@@ -267,7 +264,8 @@ router.get('/blog/writeblog',(req,res)=>{
     writer: req.session.user.username,
     writerickname:req.session.user.nickname,
     headimg:req.session.user.headimg,
-    writedate:time
+    writedate:time,
+    blogcomments:[]
   })
   console.log(time);
   blog.save((err,ret)=>{
@@ -279,7 +277,7 @@ router.get('/blog/writeblog',(req,res)=>{
     else{
       res.json({
         "code":200,
-        "data":"成功",
+        "data":blog,
         "msg":"保存成功"
       })
     }
@@ -293,6 +291,27 @@ router.get('/blog/writeblog',(req,res)=>{
 })
 //博客点击
 router.get('/blog/findblogbyid',(req,res)=>{
+  
+    var body = req.query
+    Blog.find({
+      _id: body.id
+    },(err,rut)=>{
+      if(err){
+        res.json({
+          "msg":"error"
+        })
+      }
+      else{
+        res.json({
+          "code":200,
+          "msg":"查询成功",
+          "data":rut
+        })
+      }
+    })
+})
+//获取评论
+router.get('/blog/findcommentbyid',(req,res)=>{
   var body = req.query
   Blog.find({
     _id: body.id
@@ -310,5 +329,52 @@ router.get('/blog/findblogbyid',(req,res)=>{
       })
     }
   })
+})
+//发布评论
+router.get('/blog/writecomment',(req,res)=>{
+  issession = session.filter(item=>{
+    return item._id == req.session.user._id
+  })
+  if(issession.length!==0){
+  var body = req.query
+  var comment={
+    content:body.comment,
+    commernickname:req.session.user.nickname,
+    commer:req.session.user.username,
+    commerhead:req.session.user.headimg
+  }
+  var arr=[]
+  Blog.findOne({_id: body.id},
+    (err,ret)=>{
+    if(err){
+      res.json({
+        "msg":"这个博客消失啦～～～"
+      })
+    }else{
+      arr = ret.comments
+      arr.push(comment)  
+      Blog.updateOne({_id: body.id},{comments:arr},(err,b)=>{
+        if(err){
+          res.json({
+            "msg":"修改失败"
+          })
+        }else{
+          res.json({
+            "code":200,
+            "msg":"评论成功了～～～",
+            "data":ret
+          })
+        }
+      })
+    }
+  })
+
+  
+} 
+else{
+  res.json({
+    "msg":"先登录了啦～～～"
+  })
+}
 })
 module.exports = router;
