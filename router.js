@@ -23,10 +23,8 @@ router.get('/login/userlogin',(req,res)=>{
 		}else{
     
      req.session.user = user;
-    
+    console.log(user);
      session[session.length]=req.session.user;
-     //console.log(res.get('Set-Cookie'))
-     console.log(session)
 		res.json({
 		"code":200, 
 		"msg":"登录成功",
@@ -51,7 +49,6 @@ router.get('/login/outlogin',(req,res)=>{
   })
   if(issession !== 0){
     session.splice(idx,1)
-    console.log(session);
     res.json({
       "code":200,
       "msg":"退出成功",
@@ -105,7 +102,6 @@ router.get('/register/userRegister',(req,res)=>{
 							user.save(function(err, ret) {
 							if (err) {
 								console.log('保存失败',err);
-								//console.log(ret)
 								res.send("注册失败")
 							} else {
 								console.log('保存成功');
@@ -265,9 +261,9 @@ router.get('/blog/writeblog',(req,res)=>{
     writerickname:req.session.user.nickname,
     headimg:req.session.user.headimg,
     writedate:time,
-    blogcomments:[]
+    blogcomments:[],
+    visitors:[]
   })
-  console.log(time);
   blog.save((err,ret)=>{
     if (err) {
       res.json({
@@ -291,22 +287,39 @@ router.get('/blog/writeblog',(req,res)=>{
 })
 //博客点击
 router.get('/blog/findblogbyid',(req,res)=>{
-  
     var body = req.query
-    Blog.find({
+    var arrv = []
+    Blog.findOne({
       _id: body.id
-    },(err,rut)=>{
+    },(err,ret)=>{
       if(err){
         res.json({
           "msg":"error"
         })
       }
       else{
-        res.json({
-          "code":200,
-          "msg":"查询成功",
-          "data":rut
+        arrv = ret.visitors
+        if (!v){arrv.push(v)}
+        var isvisit = arrv.filter(item=>{
+          return item.visitor == body.visitor
         })
+        if(isvisit.length==0){
+          arrv.push(v)
+        } 
+        Blog.updateOne({_id: body.id},{visitors:arrv},(err,s)=>{
+          if(err){
+            res.json({
+              "msg":"不是吧阿sir"
+            })
+          }else{
+            res.json({
+              "code":200,
+              "msg":"查询成功",
+              "data":ret
+            })
+          }
+        })
+        
       }
     })
 })

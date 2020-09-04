@@ -27,6 +27,9 @@ var BlogSchema = new Schema({
             commer:{type:String},
             commerhead:{type:String}
         }
-    ]
+    ],
+    visitors:[{
+        visitor:{type:String}
+    }]
 })
 module.exports = mongoose.model('Blog',BlogSchema) 
