@@ -23,8 +23,9 @@ router.get('/login/userlogin',(req,res)=>{
 		}else{
     
      req.session.user = user;
-    console.log(user);
-     session[session.length]=req.session.user;
+    console.log(session);
+    session[session.length]=req.session.user;
+    console.log(session);
 		res.json({
 		"code":200, 
 		"msg":"登录成功",
@@ -49,6 +50,7 @@ router.get('/login/outlogin',(req,res)=>{
   })
   if(issession !== 0){
     session.splice(idx,1)
+    console.log(session);
     res.json({
       "code":200,
       "msg":"退出成功",
@@ -122,18 +124,20 @@ router.get('/register/userRegister',(req,res)=>{
 
 //获取七牛云token
 router.get('/token/cper/gettoken',(req,res)=>{
-  const accesskey='NE8_vBQZRIGgA3rME0MDu_nrFLnb6RXYoE3vDdtH';
-  const ssk='o7pfhdI45Y88B3rIw3P5yC0d18Jm7fFYN9teGDBx';
-  const bucket='nxhub';
+  const accesskey='';
+  const ssk='';
+  const bucket='hcpr';
   let mac=new qiniu.auth.digest.Mac(accesskey,ssk);
+
   let options={
     scope:bucket,
      expires:3600*24
   };
   let putPolicy=new qiniu.rs.PutPolicy(options);
   let uploadToken=putPolicy.uploadToken(mac);
- 
-
+  res.json({
+    "token":uploadToken
+  })
 })
 //修改昵称
 router.get('/personal/editnickname',(req,res)=>{
@@ -173,6 +177,43 @@ router.get('/personal/editnickname',(req,res)=>{
     res.json({
       "code":300,
       "msg":"用户未登录"
+    })
+  }
+})
+//修改头像
+router.get('/personal/editheadimg',(req,res)=>{
+  var body = req.query,
+  
+  issession = session.filter(item=>{
+    return item._id == req.session.user._id
+  })
+  if(issession.length != 0){
+    
+    User.updateOne({_id:req.session.user._id},{
+      // headimg:'http://hchopper.top/'+body.headimg
+      headimg:body.headimg
+    },(err)=>{
+      if(err){
+        res.json({
+          "data":"error"
+        })
+      }
+      else{
+        User.findOne({_id:req.session.user._id},(err,result)=>{
+          if (err) {
+           res.json({
+             "msg":"出错",
+             "data":err,
+           })
+          }else{
+           res.json({
+             "code":200, 
+             "msg":"修改成功",
+             "data":result,
+           })
+          }
+   })
+      }
     })
   }
 })
@@ -289,6 +330,9 @@ router.get('/blog/writeblog',(req,res)=>{
 router.get('/blog/findblogbyid',(req,res)=>{
     var body = req.query
     var arrv = []
+    var v = {
+      visitor:body.visitor
+    }
     Blog.findOne({
       _id: body.id
     },(err,ret)=>{
