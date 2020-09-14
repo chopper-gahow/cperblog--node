@@ -20,14 +20,6 @@ var BlogSchema = new Schema({
     writerickname:{
         type:String
     },
-    comments:[
-        {
-            content:{type:String},
-            commernickname:{type:String},
-            commer:{type:String},
-            commerhead:{type:String}
-        }
-    ],
     visitors:[{
         visitor:{type:String}
     }]

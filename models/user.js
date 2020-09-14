@@ -19,7 +19,12 @@ var UserSchema = new Schema({
 	},
 	birth:{
 		type:String
-	}
+	},
+	collections:[
+		{
+			blogid:{type:String}
+		}
+	]
 
 })
 module.exports = mongoose.model('User',UserSchema) 
