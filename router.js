@@ -8,6 +8,39 @@ const Comments = require('./models/comments');
 const { writer } = require('repl');
 const { ifError } = require('assert');
 const { insertMany } = require('./models/user');
+var cheerio = require("cheerio");
+var rerequest = require('request');
+const superagent = require("superagent");
+const http       = require("http");
+const path       = require("path");
+const url        = require("url");
+const fs         = require("fs");
+const { response, request } = require('express');
+
+
+//  🐛
+router.get('/getcsdnblog',(req,res)=>{
+  rerequest("https://www.csdn.net/",(error,response,body)=>{
+    if (!error && response.statusCode == 200) {
+      var $ = cheerio.load(body)
+      var csdndailys = []
+      for(i = 1;i<=14;i++){
+        var csdnhead = $('.feed_company ul.company_list li:nth-of-type('+i+') .img_box a img').attr('src')
+        var csdntitle = $('.feed_company ul.company_list li:nth-of-type('+i+') .company_name a').text()
+        var csdnlink = $('.feed_company ul.company_list li:nth-of-type('+i+') .company_name a').attr('href')
+        var csdndaily = {
+          headimg:csdnhead,
+          title:csdntitle,
+          dylink:csdnlink
+        }
+        csdndailys.push(csdndaily)
+      }
+      res.json({
+        "data":csdndailys,
+      })
+    }
+  })
+})
 //登录接口
 router.get('/login/userlogin',(req,res)=>{
   var body=req.query
