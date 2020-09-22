@@ -8,39 +8,18 @@ const Comments = require('./models/comments');
 const { writer } = require('repl');
 const { ifError } = require('assert');
 const { insertMany } = require('./models/user');
-var cheerio = require("cheerio");
-var rerequest = require('request');
+
 const superagent = require("superagent");
 const http       = require("http");
 const path       = require("path");
 const url        = require("url");
 const fs         = require("fs");
+
 const { response, request } = require('express');
 
 
 //  🐛
-router.get('/getcsdnblog',(req,res)=>{
-  rerequest("https://www.csdn.net/",(error,response,body)=>{
-    if (!error && response.statusCode == 200) {
-      var $ = cheerio.load(body)
-      var csdndailys = []
-      for(i = 1;i<=14;i++){
-        var csdnhead = $('.feed_company ul.company_list li:nth-of-type('+i+') .img_box a img').attr('src')
-        var csdntitle = $('.feed_company ul.company_list li:nth-of-type('+i+') .company_name a').text()
-        var csdnlink = $('.feed_company ul.company_list li:nth-of-type('+i+') .company_name a').attr('href')
-        var csdndaily = {
-          headimg:csdnhead,
-          title:csdntitle,
-          dylink:csdnlink
-        }
-        csdndailys.push(csdndaily)
-      }
-      res.json({
-        "data":csdndailys,
-      })
-    }
-  })
-})
+
 //登录接口
 router.get('/login/userlogin',(req,res)=>{
   var body=req.query
@@ -85,8 +64,6 @@ router.get('/login/userlogin',(req,res)=>{
 })
 //退出登陆
 router.get('/login/outlogin',(req,res)=>{
-  console.log(123);
-  console.log(req.query);
   var body = req.query
   var idx
   issession = session.filter((item,index)=>{
@@ -481,6 +458,7 @@ router.post('/blog/writeblog',(req,res)=>{
           writerickname:ret.nickname,
           headimg:ret.headimg,
           writedate:time,
+          commentcount:0,
           visitors:[]
         })
         blog.save((err,rut)=>{
@@ -593,11 +571,26 @@ router.get('/blog/uploadcomment',(req,res)=>{
         })
       }
       else{
-        res.json({
-          "code":200,
-          "data":comment,
-          "msg":"评论成功"
+        var a = 0
+        Blog.findOne({_id:body.blogid},(err,r)=>{
+          a = r.commentcount + 1
+          console.log(a);
+        
+        Blog.updateOne({_id:body.blogid},{commentcount:a},(err)=>{
+          if(err){
+            res.json({
+              "msg":"评论失败"
+            })
+          }
+          else{
+            res.json({
+              "code":200,
+              "data":comment,
+              "msg":"评论成功"
+            })
+          }
         })
+      })
       }
     })
       }
@@ -765,7 +758,7 @@ router.get('/blog/findbyid',(req,res)=>{
     }
   })
 })
-//查找关注
+//查找收藏
 router.get('/blog/findblogbycollect',(req,res)=>{
   User.findOne({_id:req.session.user._id},(err,ret)=>{
     if(err){
@@ -776,6 +769,7 @@ router.get('/blog/findblogbycollect',(req,res)=>{
     else{
       if(ret.collections.length == 0){
         res.json({
+          "code":201,
           "msg":"还未收藏博客"
         })
       }
@@ -833,6 +827,87 @@ router.get('/blog/findpersonblog',(req,res)=>{
         "code":200,
         "msg":"信息列表获取成功",
         "data":ret
+      })
+    }
+  })
+})
+//根据id删除博客
+router.get('/blog/deletebyid',(req,res)=>{
+  var body = req.query
+  Blog.deleteOne({_id:body.id},(err,ret)=>{
+    if(err){
+      res.json({
+        "msg":"删除失败"
+      })
+    }
+    else{
+      res.json({
+        "code":200,
+        "mag":"删除成功"
+      })
+    }
+})
+})
+//删除博客时删除相关评论
+router.get('/blog/deletecommentsbyid',(req,res)=>{
+  var body = req.query
+  Comments.find({blogid:body.id},(err,ret)=>{
+    if(err){
+      res.json({
+        "msg":"评论获取失败"
+      })
+    }
+    else if(ret.length == 0){
+      res.json({
+        "code":200
+      })
+    }
+    else{
+      Comments.deleteMany({blogid:body.id},(err,rut)=>{
+        if(err){
+          res.json({
+            "msg":"相关评论删除失败"
+          })
+        }
+        res.json({
+          "code":200,
+          "msg":"相关评论删除成功"
+        })
+      })
+    }
+  })
+})
+//删除相关用户关注信息
+router.get('/blog/deletecollectsbyid',(req,res)=>{
+  var body = req.query
+  User.find((err,ret)=>{
+    if(err){
+      res.json({
+        "msg":"用户关注查询失败"
+      })
+    }
+    else{
+      var newcollect = []
+      ret.map(item=>{
+        item.collections.map((itm,idx)=>{
+          if(itm.blogid == body.id){
+            item.collections.splice(idx,1)
+            newcollect = item.collections
+          }
+        })
+        User.updateOne({_id:item._id},{collections:newcollect},(err,re)=>{
+          if(err){
+            res.json({
+              "msg":"用户收藏更新失败"
+            })
+          }
+          else{
+            res.json({
+              "code":200,
+              "msg":"评论列表删除成功"
+            })
+          }
+        })
       })
     }
   })

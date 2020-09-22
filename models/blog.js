@@ -20,6 +20,9 @@ var BlogSchema = new Schema({
     writerickname:{
         type:String
     },
+    commentcount:{
+        type:Number
+    },
     visitors:[{
         visitor:{type:String}
     }]
