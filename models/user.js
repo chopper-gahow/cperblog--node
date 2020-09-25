@@ -20,6 +20,11 @@ var UserSchema = new Schema({
 	birth:{
 		type:String
 	},
+	ilike:[
+		{
+			blogid:{type:String}
+		}
+	],
 	collections:[
 		{
 			blogid:{type:String}

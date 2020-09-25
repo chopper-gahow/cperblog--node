@@ -147,6 +147,8 @@ router.get('/register/userRegister',(req,res)=>{
   nickname:'用户'+body.username,
   headimg:'http://hchopper.top/headimg.jpg',
   birth:'',
+  ilike:[],
+  collections:[],
 	avater:body.avater
 		});
 			User.findOne({
@@ -459,7 +461,8 @@ router.post('/blog/writeblog',(req,res)=>{
           headimg:ret.headimg,
           writedate:time,
           commentcount:0,
-          visitors:[]
+          visitors:[],
+          liked:[]
         })
         blog.save((err,rut)=>{
           if (err) {
@@ -647,6 +650,10 @@ router.get('/blog/collectblog',(req,res)=>{
     var c = {
       blogid:body.blogid
     }
+    var arrbc = []
+    var bc = {
+      username:req.session.user.username
+    }
     User.findOne({_id:req.session.user._id},(err,ret)=>{
       if(err){
         res.json({
@@ -654,21 +661,45 @@ router.get('/blog/collectblog',(req,res)=>{
         })
       }
       else{
-        arrc = ret.collections
-        arrc.push(c)
-        User.updateOne({_id:ret._id},{collections:arrc},(err,rut)=>{
-          if(err){
-            res.json({
-              "msg":"收藏失败"
-            })
-          }
-          else{
-            res.json({
-              "code":200,
-              "msg":'收藏成功'
-            })
-          }
+        
+        iscollect = ret.collections.filter(item=>{
+          return item.blogid == body.blogid
         })
+        if(iscollect.length == 0){
+          arrc = ret.collections
+          arrc.push(c)
+          User.updateOne({_id:ret._id},{collections:arrc},(err,rut)=>{
+            if(err){
+              res.json({
+                "msg":"点赞失败"
+              })
+            }
+            else{
+              Blog.findOne({_id:body.blogid},(err,brr)=>{
+                isbecollect = brr.collected.filter(item=>{
+                  return item.username == req.session.user.username
+                })
+                if(isbecollect.length == 0){
+                  arrbc = brr.collected
+                  arrbc.push(bc)
+                  Blog.updateOne({_id:body.blogid},{collected:arrbc},(err,ubr)=>{
+                    if(err){
+                      res.json({
+                        "msg":'收藏失败'
+                      })
+                    }
+                    else{
+                      res.json({
+                        "code":200,
+                        "msg":'收藏成功'
+                      })
+                    }
+                })
+                }
+              })
+            }
+          })
+        }
       }
     })
   }
@@ -698,22 +729,42 @@ router.get('/blog/discollectblog',(req,res)=>{
         discarr = ret.collections
         for(var dis = 0;dis<discarr.length;dis++){
           if(disc.blogid == discarr[dis].blogid){
-
             discarr.splice(dis,1)
           }
         }
-
         User.updateOne({_id:ret._id},{collections:discarr},(err,rut)=>{
           if(err){
             res.json({
-              "msg":"收藏失败"
+              "msg":"取消点赞失败"
             })
           }
           else{
-            res.json({
-              "code":200,
-              "msg":'取消收藏成功'
+            var disbcarr = []
+            Blog.findOne({_id:body.blogid},(err,rbr)=>{
+              if(err){
+                console.log(错了);
+              }
+              else{
+                disbcarr = rbr.collected
+                for(var disb = 0;disb<disbcarr.length;disb++){
+                  if(req.session.user.username == disbcarr[disb].username){
+                    disbcarr.splice(disb,1)
+                  }
+                }
+                Blog.updateOne({_id:body.blogid},{collected: disbcarr},(err)=>{
+                  if(err){
+                    console.log('cuole');
+                  }
+                  else{
+                    res.json({
+                      "code":200,
+                      "msg":"取消点赞成功"
+                    })
+                  }
+                })
+              }
             })
+            
           }
         })
       }
@@ -910,6 +961,176 @@ router.get('/blog/deletecollectsbyid',(req,res)=>{
         })
       })
     }
+  })
+})
+//查找该用户的博客
+router.get('/blog/findsomeoneblog',(req,res)=>{
+  var body = req.query
+  Blog.find({writer:body.username},(err,ret)=>{
+    if(err){
+      res.json({
+        "msg":'别人家的博客获取失败'
+      })
+    }
+    else{
+      res.json({
+        "code":200,
+        "msg":"别人家的博客获取成功",
+        "data":ret
+      })
+    }
+  })
+})
+//点赞
+router.get('/blog/like',(req,res)=>{
+  issession = session.filter(item=>{
+    return item._id == req.session.user._id
+  })
+  if(issession.length!==0){
+    var body = req.query
+    var arrl = []
+    var l = {
+      blogid:body.blogid
+    }
+    var arrbl = []
+    var bl = {
+      username:req.session.user.username
+    }
+    User.findOne({_id:req.session.user._id},(err,ret)=>{
+      if(err){
+        res.json({
+          "msg":"查询错误"
+        })
+      }
+      else{
+        islike = ret.ilike.filter(item=>{
+          return item.blogid == body.blogid
+        })
+        if(islike.length == 0){
+        arrl = ret.ilike
+        arrl.push(l)
+
+        User.updateOne({_id:ret._id},{ilike:arrl},(err,rut)=>{
+          if(err){
+            res.json({
+              "msg":"点赞失败"
+            })
+          }
+          else{
+            Blog.findOne({_id:body.blogid},(err,br)=>{
+              isbeliked = br.liked.filter(item=>{
+                return item.username == req.session.user.username
+              })
+              if(isbeliked.length == 0){
+                arrbl = br.liked
+                arrbl.push(bl)
+                Blog.updateOne({_id:body.blogid},{liked:arrbl},(err,ubr)=>{
+                  if(err){
+                    res.json({
+                      "msg":'点赞失败'
+                    })
+                  }
+                  else{
+                    res.json({
+                      "code":200,
+                      "msg":'点赞成功'
+                    })
+                  }
+              })
+              }
+            })
+          }
+        })
+      }
+      }
+    })
+  }
+  else{
+    res.json({
+      "msg":"请先登录了啦～～～"
+    })
+  }
+})
+//取消点赞
+router.get('/blog/dislike',(req,res)=>{
+  issession = session.filter(item=>{
+    return item._id == req.session.user._id
+  })
+  if(issession.length!==0){
+    var body = req.query
+    var dislarr = []
+    var disl = {
+      blogid: body.blogid
+    }
+    User.findOne({_id: req.session.user._id},(err,ret)=>{
+      if(err){
+        res.jaon({
+          "mag":"获取用户信息失败"
+        })
+      }else{
+        dislarr = ret.ilike
+        for(var dis = 0;dis<dislarr.length;dis++){
+          if(disl.blogid == dislarr[dis].blogid){
+            dislarr.splice(dis,1)
+          }
+        }
+        User.updateOne({_id:ret._id},{ilike:dislarr},(err,rut)=>{
+          if(err){
+            res.json({
+              "msg":"取消点赞失败"
+            })
+          }
+          else{
+            var disblarr = []
+            Blog.findOne({_id:body.blogid},(err,rbr)=>{
+              if(err){
+                console.log(错了);
+              }
+              else{
+                disblarr = rbr.liked
+                for(var disb = 0;disb<disblarr.length;disb++){
+                  if(req.session.user.username == disblarr[disb].username){
+                    disblarr.splice(disb,1)
+                  }
+                }
+                Blog.updateOne({_id:body.blogid},{liked: disblarr},(err)=>{
+                  if(err){
+                    console.log('cuole');
+                  }
+                  else{
+                    res.json({
+                      "code":200,
+                      "msg":"取消点赞成功"
+                    })
+                  }
+                })
+              }
+            })
+            
+          }
+        })
+      }
+    })
+  }
+  else{
+    res.json({
+      "msg":"操作失败，用户登陆信息失效"
+    })
+  }
+})
+//是否点赞
+router.get('/blog/isuserlike',(req,res)=>{
+  User.findOne({username: req.session.user.username},(err,ret)=>{
+    var body = req.query
+    ret.ilike.map(item=>{
+      if (item.blogid == body.blogid) {
+          res.json({
+          "code":200,
+          "msg":"查询收藏状态成功",
+          "data":true 
+        })
+      }
+    })
   })
 })
 module.exports = router;

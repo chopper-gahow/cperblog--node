@@ -23,6 +23,16 @@ var BlogSchema = new Schema({
     commentcount:{
         type:Number
     },
+    liked:[
+        {
+            username:{type:String}
+        }
+    ],
+    collected:[
+        {
+            username:{type:String}
+        }
+    ],
     visitors:[{
         visitor:{type:String}
     }]
